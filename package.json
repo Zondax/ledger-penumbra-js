@@ -2,7 +2,7 @@
   "name": "@zondax/ledger-penumbra",
   "author": "Zondax AG",
   "license": "Apache-2.0",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "description": "The API for the penumbra App (Ledger Nano S/X/S+)",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
