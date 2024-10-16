@@ -7,10 +7,10 @@
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
   "types": "./dist/index.d.ts",
-  "homepage": "https://github.com/zondax/ledger-penumbra",
+  "homepage": "https://github.com/zondax/ledger-penumbra-js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zondax/ledger-penumbra.git"
+    "url": "git+https://github.com/zondax/ledger-penumbra-js.git"
   },
   "keywords": [
     "Zondax",
@@ -25,7 +25,7 @@
     "format": "prettier --write ."
   },
   "bugs": {
-    "url": "https://github.com/zondax/ledger-penumbra/issues"
+    "url": "https://github.com/zondax/ledger-penumbra-js/issues"
   },
   "dependencies": {
     "@zondax/ledger-js": "^1.0.1"
