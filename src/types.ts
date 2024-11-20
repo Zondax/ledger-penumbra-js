@@ -13,10 +13,7 @@ export interface AddressIndex {
 }
 
 export interface ResponseAddress {
-  // publicKey?: Buffer;
-  // principal?: Buffer;
   address?: Buffer;
-  // principalText?: string;
 }
 
 export interface ResponseFvk {
