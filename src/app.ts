@@ -15,7 +15,7 @@
  *  limitations under the License.
  ******************************************************************************* */
 import { P2_VALUES, PREHASH_LEN, RANDOMIZER_LEN, SIGRSLEN } from "./consts";
-import { ResponseAddress, ResponseFvk, PenumbraIns, ResponseSign } from "./types";
+import { ResponseAddress, ResponseFvk, PenumbraIns, ResponseSign, AddressIndex } from "./types";
 
 import BaseApp, {
   ConstructorParams,
@@ -56,10 +56,9 @@ export class PenumbraApp extends BaseApp {
 
   async getAddress(
     path: string,
-    account: number,
-    randomizer: string | undefined = undefined,
+    addressIndex: AddressIndex,
   ): Promise<ResponseAddress> {
-    const data = this._prepareAddressData(path, account, randomizer);
+    const data = this._prepareAddressData(path, addressIndex);
     try {
       const responseBuffer = await this.transport.send(
         this.CLA,
@@ -81,10 +80,9 @@ export class PenumbraApp extends BaseApp {
 
   async showAddress(
     path: string,
-    account: number,
-    randomizer: string | undefined = undefined,
+    addressIndex: AddressIndex,
   ): Promise<ResponseAddress> {
-    const data = this._prepareAddressData(path, account, randomizer);
+    const data = this._prepareAddressData(path, addressIndex);
 
     try {
       const responseBuffer = await this.transport.send(
@@ -105,9 +103,8 @@ export class PenumbraApp extends BaseApp {
     }
   }
 
-  async getFVK(path: string, account: number): Promise<ResponseFvk> {
-    const updatedPath = this._updatePathWithAccount(path, account);
-    const serializedPath = this.serializePath(updatedPath);
+  async getFVK(path: string, addressIndex: AddressIndex): Promise<ResponseFvk> {
+    const data = this._prepareAddressData(path, addressIndex);
 
     // Fvk can be retrieved without user confirmation
     try {
@@ -116,7 +113,7 @@ export class PenumbraApp extends BaseApp {
         this.INS.FVK,
         this.P1_VALUES.ONLY_RETRIEVE,
         P2_VALUES.DEFAULT,
-        serializedPath,
+        data,
       );
 
       const response = processGetFvkResponse(responseBuffer);
@@ -129,11 +126,8 @@ export class PenumbraApp extends BaseApp {
     }
   }
 
-  async sign(path: BIP32Path, account: number, blob: Buffer): Promise<ResponseSign> {
-    const updatedPath = this._updatePathWithAccount(path, account);
-    console.log("updatedPath!!!!!", blob.length, updatedPath);
-    const chunks = this.prepareChunks(updatedPath, blob);
-    console.log("chunks!!!!!", chunks.length, chunks[0]);
+  async sign(path: BIP32Path, addressIndex: AddressIndex, blob: Buffer): Promise<ResponseSign> {
+    const chunks = this.prepareChunks(path, blob);
     try {
       let signatureResponse = await this.signSendChunk(this.INS.SIGN, 1, chunks.length, chunks[0]);
 
@@ -148,30 +142,31 @@ export class PenumbraApp extends BaseApp {
     }
   }
 
-  private _prepareAddressData(path: string, account: number, randomizer: string | undefined = undefined): Buffer {
-    // Add /x' to the end of the path where x is the number in account
-    const updatedPath = this._updatePathWithAccount(path, account);
-    const serializedPath = this.serializePath(updatedPath);
-    // Serialize account
-    const accountBuffer = Buffer.alloc(4);
-    accountBuffer.writeUInt32BE(account);
-    const randomizerBuffer = randomizer ? Buffer.from(randomizer, "hex") : undefined;
-    // Ensure randomizerBuffer does not exceed 12 bytes
-    if (randomizerBuffer && randomizerBuffer.length > RANDOMIZER_LEN) {
-      throw new Error("randomizerBuffer exceeds the maximum allowed length of 12 bytes");
-    }
+  private _prepareAddressData(path: string, addressIndex: AddressIndex): Buffer {
+    const serializedPath = this.serializePath(path);
+    const accountBuffer = this.serializeAccountIndex(addressIndex);
+
 
     // concatenate data
     const concatenatedBuffer: Buffer = Buffer.concat([
       serializedPath,
       accountBuffer,
-      ...(randomizerBuffer ? [randomizerBuffer] : []),
     ]);
 
     return concatenatedBuffer;
   }
 
-  private _updatePathWithAccount(path: string, account: number): string {
-    return `${path}/${account}'`;
+  private serializeAccountIndex(accountIndex: AddressIndex): Buffer {
+    const accountBuffer = Buffer.alloc(4);
+    accountBuffer.writeUInt32LE(accountIndex.account);
+
+    const hasRandomizerBuffer = Buffer.from([accountIndex.randomizer ? 1 : 0]);
+    const randomizerBuffer = accountIndex.randomizer ?? Buffer.alloc(RANDOMIZER_LEN);
+    // Ensure randomizerBuffer does not exceed 12 bytes
+    if (randomizerBuffer && randomizerBuffer.length > RANDOMIZER_LEN) {
+      throw new Error("randomizerBuffer exceeds the maximum allowed length of 12 bytes");
+    }
+
+    return Buffer.concat([accountBuffer, hasRandomizerBuffer, randomizerBuffer]);
   }
 }

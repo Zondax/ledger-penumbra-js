@@ -7,6 +7,11 @@ export interface PenumbraIns extends INSGeneric {
   FVK: 0x03;
 }
 
+export interface AddressIndex {
+  account: number;
+  randomizer?: Buffer;
+}
+
 export interface ResponseAddress {
   // publicKey?: Buffer;
   // principal?: Buffer;
