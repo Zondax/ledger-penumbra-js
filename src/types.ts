@@ -1,25 +1,31 @@
-import { INSGeneric } from "@zondax/ledger-js";
+import { INSGeneric } from '@zondax/ledger-js'
 
 export interface PenumbraIns extends INSGeneric {
-  GET_VERSION: 0x00;
-  GET_ADDR: 0x01;
-  SIGN: 0x02;
-  FVK: 0x03;
+  GET_VERSION: 0x00
+  GET_ADDR: 0x01
+  SIGN: 0x02
+  FVK: 0x03
 }
 
 export interface AddressIndex {
-  account: number;
-  randomizer?: Buffer;
+  account: number
+  randomizer?: Buffer
 }
 
 export interface ResponseAddress {
-  address?: Buffer;
+  address?: Buffer
 }
 
+// The full viewing key consists of two components:
+//
+//     - ak
+//     - nk
+//
 export interface ResponseFvk {
-  fvk?: Buffer;
+  ak: Buffer
+  nk: Buffer
 }
 
 export interface ResponseSign {
-  signature: Buffer;
+  signature: Buffer
 }

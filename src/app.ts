@@ -14,7 +14,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ******************************************************************************* */
-import BaseApp, { BIP32Path, ConstructorParams, LedgerError, PAYLOAD_TYPE, Transport, processErrorResponse } from '@zondax/ledger-js'
+import BaseApp, {
+  BIP32Path,
+  ConstructorParams,
+  LedgerError,
+  PAYLOAD_TYPE,
+  Transport,
+  processErrorResponse,
+  processResponse,
+} from '@zondax/ledger-js'
 
 import { DEFAULT_PATH, P2_VALUES, PREHASH_LEN, RANDOMIZER_LEN, SIGRSLEN } from './consts'
 import { processGetAddrResponse, processGetFvkResponse } from './helper'
@@ -53,7 +61,8 @@ export class PenumbraApp extends BaseApp {
     try {
       const responseBuffer = await this.transport.send(this.CLA, this.INS.GET_ADDR, this.P1_VALUES.ONLY_RETRIEVE, P2_VALUES.DEFAULT, data)
 
-      const response = processGetAddrResponse(responseBuffer)
+      const payload = processResponse(responseBuffer)
+      const response = processGetAddrResponse(payload)
 
       return {
         address: response.address,
@@ -75,7 +84,8 @@ export class PenumbraApp extends BaseApp {
         data
       )
 
-      const response = processGetAddrResponse(responseBuffer)
+      const payload = processResponse(responseBuffer)
+      const response = processGetAddrResponse(payload)
 
       return {
         address: response.address,
@@ -92,11 +102,10 @@ export class PenumbraApp extends BaseApp {
     try {
       const responseBuffer = await this.transport.send(this.CLA, this.INS.FVK, this.P1_VALUES.ONLY_RETRIEVE, P2_VALUES.DEFAULT, data)
 
-      const response = processGetFvkResponse(responseBuffer)
+      const payload = processResponse(responseBuffer)
+      const response = processGetFvkResponse(payload)
 
-      return {
-        fvk: response.fvk,
-      } as ResponseFvk
+      return response
     } catch (e) {
       throw processErrorResponse(e)
     }
