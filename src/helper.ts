@@ -1,26 +1,25 @@
-import { ADDRLEN, FVKLEN } from "./consts";
-import { ResponseAddress, ResponseFvk } from "./types";
+import { ResponsePayload } from '@zondax/ledger-js/dist/payload'
 
-export function processGetAddrResponse(response: Buffer): ResponseAddress {
-  const errorCodeData = response.subarray(-2);
-  const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+import { ADDRLEN, AK_LEN, FVKLEN, NK_LEN } from './consts'
+import { ResponseAddress, ResponseFvk } from './types'
 
-  const address = Buffer.from(response.subarray(0, ADDRLEN));
-  response = response.subarray(ADDRLEN);
+export function processGetAddrResponse(response: ResponsePayload): ResponseAddress {
+  const address = response.readBytes(ADDRLEN)
 
   return {
     address,
-  };
+  }
 }
 
-export function processGetFvkResponse(response: Buffer): ResponseFvk {
-  const errorCodeData = response.subarray(-2);
-  const returnCode = errorCodeData[0] * 256 + errorCodeData[1];
+export function processGetFvkResponse(response: ResponsePayload): ResponseFvk {
+  const keys = response.readBytes(FVKLEN)
 
-  const fvk = Buffer.from(response.subarray(0, FVKLEN));
-  response = response.subarray(FVKLEN);
+  // Extract ak and nullifier_key
+  const ak = Buffer.from(keys.subarray(0, AK_LEN))
+  const nk = Buffer.from(keys.subarray(32, FVKLEN))
 
   return {
-    fvk,
-  };
+    ak,
+    nk,
+  }
 }
