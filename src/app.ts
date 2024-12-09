@@ -113,11 +113,10 @@ export class PenumbraApp extends BaseApp {
     }
   }
 
-  async sign(path: BIP32Path, addressIndex: AddressIndex, blob: Buffer, metadata: string[] = []): Promise<ResponseSign> {
-    // First send the metadata
-
+  async sign(path: BIP32Path, blob: Buffer, metadata: string[] = []): Promise<ResponseSign> {
     const chunks = this.prepareChunks(path, blob)
     try {
+      // First send the metadata
       await this._sendTxMetadata(metadata)
 
       let signatureResponse = await this.signSendChunk(this.INS.SIGN, 1, chunks.length, chunks[0])
