@@ -1,7 +1,7 @@
 import { ResponsePayload } from '@zondax/ledger-js/dist/payload'
 
-import { ADDRLEN, AK_LEN, FVKLEN, NK_LEN } from './consts'
-import { ResponseAddress, ResponseFvk } from './types'
+import { ADDRLEN, AK_LEN, EFFECT_HASH_LEN, FVKLEN } from './consts'
+import { ResponseAddress, ResponseFvk, ResponseSign } from './types'
 
 export function processGetAddrResponse(response: ResponsePayload): ResponseAddress {
   const address = response.readBytes(ADDRLEN)
@@ -21,5 +21,17 @@ export function processGetFvkResponse(response: ResponsePayload): ResponseFvk {
   return {
     ak,
     nk,
+  }
+}
+
+export function processSignResponse(response: ResponsePayload): ResponseSign {
+  const signature = response.readBytes(EFFECT_HASH_LEN)
+  const spendAuth_signature_qty = response.readBytes(2).readUInt16LE(0)
+  const delegatorVote_signature_qty = response.readBytes(2).readUInt16LE(0)
+
+  return {
+    signature,
+    spendAuth_signature_qty,
+    delegatorVote_signature_qty,
   }
 }

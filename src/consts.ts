@@ -15,3 +15,6 @@ export const FVKLEN = AK_LEN + NK_LEN
 export const SIGRSLEN = 64
 export const PREHASH_LEN = 32
 export const RANDOMIZER_LEN = 12
+export const EFFECT_HASH_LEN = 64
+export const SPEND_AUTH_SIGNATURE_LEN = 64
+export const DELEGATOR_VOTE_SIGNATURE_LEN = 64
