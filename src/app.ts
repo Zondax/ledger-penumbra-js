@@ -117,7 +117,9 @@ export class PenumbraApp extends BaseApp {
     const chunks = this.prepareChunks(path, blob)
     try {
       // First send the metadata
-      await this._sendTxMetadata(metadata)
+      if (metadata.length !== 0) {
+        await this._sendTxMetadata(metadata)
+      }
 
       let signatureResponse = await this.signSendChunk(this.INS.SIGN, 1, chunks.length, chunks[0])
 
