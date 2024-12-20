@@ -17,17 +17,15 @@
 import BaseApp, {
   BIP32Path,
   ConstructorParams,
-  LedgerError,
-  PAYLOAD_TYPE,
-  ResponsePayload,
   Transport,
   processErrorResponse,
   processResponse,
 } from '@zondax/ledger-js'
 
-import { DEFAULT_PATH, P2_VALUES, PREHASH_LEN, RANDOMIZER_LEN, SIGRSLEN } from './consts'
-import { processGetAddrResponse, processGetFvkResponse } from './helper'
-import { AddressIndex, PenumbraIns, ResponseAddress, ResponseFvk, ResponseSign } from './types'
+import { DEFAULT_PATH, P2_VALUES, RANDOMIZER_LEN, SPEND_AUTH_SIGNATURE_LEN } from './consts'
+import { processGetAddrResponse, processGetFvkResponse, processSignResponse } from './helper'
+import { AddressIndex, PenumbraIns, ResponseAddress, ResponseFvk, ResponseSign, ResponseSpendAuthSignatures, ResponseDelegatorVoteSignatures } from './types'
+import { ByteStream } from '@zondax/ledger-js/dist/byteStream'
 
 // https://buf.build/penumbra-zone/penumbra/docs/main:penumbra.custody.v1#penumbra.custody.v1.ConfirmAddressRequest
 
@@ -46,6 +44,8 @@ export class PenumbraApp extends BaseApp {
         SIGN: 0x02,
         FVK: 0x03,
         TX_METADATA: 0x04,
+        GET_SPEND_AUTH_SIGNATURES: 0x05,
+        GET_BINDING_SIGNATURES: 0x06,
       },
       p1Values: {
         ONLY_RETRIEVE: 0x00,
@@ -126,8 +126,27 @@ export class PenumbraApp extends BaseApp {
       for (let i = 1; i < chunks.length; i += 1) {
         signatureResponse = await this.signSendChunk(this.INS.SIGN, 1 + i, chunks.length, chunks[i])
       }
+      
+      // |   64 bytes  |         2 bytes          |        2 bytes        |
+      // | effect hash | spend auth signature qty | binding signature qty |
+      return processSignResponse(signatureResponse)
+    } catch (e) {
+      throw processErrorResponse(e)
+    }
+  }
+
+  async getSpendAuthSignatures(index: number): Promise<ResponseSpendAuthSignatures> {
+    try {
+      const bs = new ByteStream()
+      bs.appendUint16(index)
+      const indexBuffer = bs.getCompleteBuffer()  
+      const responseBuffer = await this.transport.send(this.CLA, this.INS.GET_SPEND_AUTH_SIGNATURES, this.P1_VALUES.ONLY_RETRIEVE, P2_VALUES.DEFAULT, indexBuffer)
+      
+      const payload = processResponse(responseBuffer)
+      const spendAuthSignature = payload.readBytes(SPEND_AUTH_SIGNATURE_LEN)
+
       return {
-        signature: signatureResponse.readBytes(signatureResponse.length()),
+        spendAuth_signature: spendAuthSignature
       }
     } catch (e) {
       throw processErrorResponse(e)

@@ -6,6 +6,8 @@ export interface PenumbraIns extends INSGeneric {
   SIGN: 0x02
   FVK: 0x03
   TX_METADATA: 0x04
+  GET_SPEND_AUTH_SIGNATURES: 0x05
+  GET_BINDING_SIGNATURES: 0x06
 }
 
 export interface AddressIndex {
@@ -29,4 +31,14 @@ export interface ResponseFvk {
 
 export interface ResponseSign {
   signature: Buffer
+  spendAuth_signature_qty: number
+  delegatorVote_signature_qty: number
+}
+
+export interface ResponseSpendAuthSignatures {
+  spendAuth_signature: Buffer
+}
+
+export interface ResponseDelegatorVoteSignatures {
+  delegatorVote_signature: Buffer
 }
