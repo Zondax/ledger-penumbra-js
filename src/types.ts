@@ -5,6 +5,7 @@ export interface PenumbraIns extends INSGeneric {
   GET_ADDR: 0x01
   SIGN: 0x02
   FVK: 0x03
+  TX_METADATA: 0x04
 }
 
 export interface AddressIndex {

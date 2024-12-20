@@ -19,6 +19,7 @@ import BaseApp, {
   ConstructorParams,
   LedgerError,
   PAYLOAD_TYPE,
+  ResponsePayload,
   Transport,
   processErrorResponse,
   processResponse,
@@ -44,6 +45,7 @@ export class PenumbraApp extends BaseApp {
         GET_ADDR: 0x01,
         SIGN: 0x02,
         FVK: 0x03,
+        TX_METADATA: 0x04,
       },
       p1Values: {
         ONLY_RETRIEVE: 0x00,
@@ -111,9 +113,14 @@ export class PenumbraApp extends BaseApp {
     }
   }
 
-  async sign(path: BIP32Path, addressIndex: AddressIndex, blob: Buffer): Promise<ResponseSign> {
+  async sign(path: BIP32Path, blob: Buffer, metadata: string[] = []): Promise<ResponseSign> {
     const chunks = this.prepareChunks(path, blob)
     try {
+      // First send the metadata
+      if (metadata.length !== 0) {
+        await this._sendTxMetadata(metadata)
+      }
+
       let signatureResponse = await this.signSendChunk(this.INS.SIGN, 1, chunks.length, chunks[0])
 
       for (let i = 1; i < chunks.length; i += 1) {
@@ -124,6 +131,62 @@ export class PenumbraApp extends BaseApp {
       }
     } catch (e) {
       throw processErrorResponse(e)
+    }
+  }
+
+  /**
+   * Converts an array of strings into a single Buffer with the format:
+   * length + string bytes + length + string bytes + ...
+   *
+   * @param metadata - An array of strings to be converted.
+   * @returns A Buffer containing the length-prefixed string bytes.
+   * @throws Will throw an error if any string exceeds 120 bytes when encoded.
+   */
+  private _convertMetadataToBuffer(metadata: string[]): Buffer {
+    const buffers: Buffer[] = []
+
+    // Prepend the number of strings as UInt8
+    const numStrings = metadata.length
+    if (numStrings > 255) {
+      throw new Error('Cannot have more than 255 metadata strings')
+    }
+    const numStringsBuffer = Buffer.from([numStrings])
+    buffers.push(numStringsBuffer)
+
+    for (const data of metadata) {
+      // Encode the string into a Buffer using UTF-8 encoding
+      const dataBuffer = Buffer.from(data, 'utf8')
+      const length = dataBuffer.length
+
+      // Validate the length
+      if (length > 120) {
+        throw new Error('Each metadata string must be 120 bytes or fewer.')
+      }
+
+      // Create a Buffer for the length (UInt8 since max length is 120)
+      const lengthBuffer = Buffer.from([length])
+
+      // Append the length and data buffers to the array
+      buffers.push(lengthBuffer, dataBuffer)
+    }
+
+    // Concatenate all buffers into one
+    return Buffer.concat(buffers)
+  }
+
+  private async _sendTxMetadata(metadata: string[]): Promise<void> {
+    const metadataBuffer = this._convertMetadataToBuffer(metadata)
+    const chunks = this.messageToChunks(metadataBuffer)
+
+    try {
+      for (let i = 0; i < chunks.length; i++) {
+        const chunkIdx = i + 1
+        const chunkNum = chunks.length
+
+        await this.sendGenericChunk(this.INS.TX_METADATA, 0, chunkIdx, chunkNum, chunks[i])
+      }
+    } catch (error) {
+      throw processErrorResponse(error)
     }
   }
 
